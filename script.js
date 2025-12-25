@@ -44,7 +44,7 @@ function createParticles() {
 async function loadData() {
     try {
         console.log('Начинаю загрузку данных...');
-        const response = await fetch('Итоги_года_2025-12-25.json');
+        const response = await fetch('data.json');
         const data = await response.json();
         
         // Фильтруем только сделки 2025 года
