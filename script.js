@@ -1,14 +1,16 @@
-console.log('📊 Script.js v5 - Добавлена финансовая аналитика!');
+console.log('📊 Script.js v6 - Добавлена аналитика закупок!');
 
 // Глобальные переменные
 let dealsData = [];
 let paymentsData = [];
 let debtsData = [];
 let supplierPaymentsData = [];
+let purchasesData = [];
 let monthlyChart = null;
 let basisChart = null;
 let geographyChart = null;
 let paymentsChart = null;
+let purchasesChart = null;
 
 // Цветовые палитры
 const chartColors = {
@@ -56,6 +58,7 @@ async function loadData() {
         paymentsData = allData.payments || [];
         debtsData = allData.debts || [];
         supplierPaymentsData = allData.supplier_payments || [];
+        const purchases = allData.purchases || [];
         
         // Фильтруем только сделки 2025 года
         dealsData = deals.filter(deal => {
@@ -65,7 +68,15 @@ async function loadData() {
             return year === 2025;
         });
         
-        console.log(`Загружено: ${dealsData.length} сделок, ${paymentsData.length} платежей, ${debtsData.length} долгов`);
+        // Фильтруем закупки 2025 года
+        purchasesData = purchases.filter(purchase => {
+            const regDate = purchase['Дата регистрации сделки с поставщиком'];
+            if (!regDate) return false;
+            const year = new Date(regDate).getFullYear();
+            return year === 2025;
+        });
+        
+        console.log(`Загружено: ${dealsData.length} сделок, ${purchasesData.length} закупок, ${paymentsData.length} платежей, ${debtsData.length} долгов`);
         
         // Инициализация всех секций
         displayHeroStats();
@@ -74,6 +85,7 @@ async function loadData() {
         displayPaymentsChart();
         displayTopClients();
         displayTopProducts();
+        displayPurchasesAnalytics();
         displayAvgPrices();
         displayBasisChart();
         displayGeographyChart();
@@ -837,6 +849,145 @@ function initScrollAnimations() {
     }, { threshold: 0.15 });
     
     sections.forEach(section => observer.observe(section));
+}
+
+// Аналитика закупок
+function displayPurchasesAnalytics() {
+    if (!purchasesData || purchasesData.length === 0) return;
+    
+    // 1. Топ поставщиков по объему
+    const supplierVolumes = {};
+    const supplierSpending = {};
+    
+    purchasesData.forEach(purchase => {
+        const supplier = purchase['Поставщик'] || 'Неизвестно';
+        const volume = parseFloat(purchase['Объем контрактации, тонн']) || 0;
+        const price = parseFloat(purchase['Цена закупки, т.р./тонн']) || 0;
+        const spending = volume * price;
+        
+        supplierVolumes[supplier] = (supplierVolumes[supplier] || 0) + volume;
+        supplierSpending[supplier] = (supplierSpending[supplier] || 0) + spending;
+    });
+    
+    const topSuppliers = Object.entries(supplierVolumes)
+        .sort((a, b) => b[1] - a[1])
+        .slice(0, 5);
+    
+    // 2. Средняя цена по продуктам
+    const productPrices = {};
+    const productCounts = {};
+    
+    purchasesData.forEach(purchase => {
+        const product = purchase['Продукт'] || 'Неизвестно';
+        const price = parseFloat(purchase['Цена закупки, т.р./тонн']) || 0;
+        
+        if (price > 0) {
+            productPrices[product] = (productPrices[product] || 0) + price;
+            productCounts[product] = (productCounts[product] || 0) + 1;
+        }
+    });
+    
+    const avgPricesByProduct = Object.entries(productPrices).map(([product, totalPrice]) => ({
+        product,
+        avgPrice: totalPrice / productCounts[product]
+    })).sort((a, b) => b.avgPrice - a.avgPrice);
+    
+    // 3. Топ регионов по объему закупок
+    const regionVolumes = {};
+    
+    purchasesData.forEach(purchase => {
+        const region = purchase['Регион'] || 'Неизвестно';
+        const volume = parseFloat(purchase['Объем контрактации, тонн']) || 0;
+        
+        regionVolumes[region] = (regionVolumes[region] || 0) + volume;
+    });
+    
+    const topRegions = Object.entries(regionVolumes)
+        .sort((a, b) => b[1] - a[1])
+        .slice(0, 5);
+    
+    // Общая статистика
+    const totalPurchaseVolume = purchasesData.reduce((sum, p) => sum + (parseFloat(p['Объем контрактации, тонн']) || 0), 0);
+    const totalPurchaseSpending = purchasesData.reduce((sum, p) => {
+        const volume = parseFloat(p['Объем контрактации, тонн']) || 0;
+        const price = parseFloat(p['Цена закупки, т.р./тонн']) || 0;
+        return sum + (volume * price / 1000); // в тыс. руб
+    }, 0);
+    const uniqueSuppliers = new Set(purchasesData.map(p => p['Поставщик'])).size;
+    
+    // Отображение
+    const container = document.getElementById('purchasesAnalytics');
+    if (!container) return;
+    
+    container.innerHTML = `
+        <div class="purchases-stats">
+            <div class="purchase-stat-card">
+                <div class="stat-icon">📦</div>
+                <div class="stat-value">${Math.round(totalPurchaseVolume).toLocaleString('ru-RU')}</div>
+                <div class="stat-label">Тонн закуплено</div>
+            </div>
+            <div class="purchase-stat-card">
+                <div class="stat-icon">💰</div>
+                <div class="stat-value">${Math.round(totalPurchaseSpending).toLocaleString('ru-RU')}</div>
+                <div class="stat-label">Млн руб затрачено</div>
+            </div>
+            <div class="purchase-stat-card">
+                <div class="stat-icon">🏢</div>
+                <div class="stat-value">${uniqueSuppliers}</div>
+                <div class="stat-label">Поставщиков</div>
+            </div>
+            <div class="purchase-stat-card">
+                <div class="stat-icon">📋</div>
+                <div class="stat-value">${purchasesData.length}</div>
+                <div class="stat-label">Закупок</div>
+            </div>
+        </div>
+        
+        <div class="purchases-content">
+            <div class="purchases-section">
+                <h3 class="purchases-subtitle">🏆 Топ 5 поставщиков по объему</h3>
+                <div class="suppliers-list">
+                    ${topSuppliers.map(([supplier, volume], index) => `
+                        <div class="supplier-item">
+                            <div class="supplier-rank">#${index + 1}</div>
+                            <div class="supplier-info">
+                                <div class="supplier-name">${supplier}</div>
+                                <div class="supplier-details">
+                                    <span class="detail-badge">📦 ${Math.round(volume).toLocaleString('ru-RU')} тонн</span>
+                                    <span class="detail-badge">💵 ${Math.round(supplierSpending[supplier] / 1000).toLocaleString('ru-RU')} млн ₽</span>
+                                </div>
+                            </div>
+                        </div>
+                    `).join('')}
+                </div>
+            </div>
+            
+            <div class="purchases-section">
+                <h3 class="purchases-subtitle">📊 Средние цены закупки</h3>
+                <div class="prices-list">
+                    ${avgPricesByProduct.map(({product, avgPrice}) => `
+                        <div class="price-item">
+                            <div class="price-product">${product}</div>
+                            <div class="price-value">${Math.round(avgPrice).toLocaleString('ru-RU')} ₽/т</div>
+                        </div>
+                    `).join('')}
+                </div>
+            </div>
+            
+            <div class="purchases-section">
+                <h3 class="purchases-subtitle">🗺️ Топ регионов закупок</h3>
+                <div class="regions-list">
+                    ${topRegions.map(([region, volume], index) => `
+                        <div class="region-item">
+                            <div class="region-rank">#${index + 1}</div>
+                            <div class="region-name">${region}</div>
+                            <div class="region-volume">${Math.round(volume).toLocaleString('ru-RU')} т</div>
+                        </div>
+                    `).join('')}
+                </div>
+            </div>
+        </div>
+    `;
 }
 
 // Инициализация
