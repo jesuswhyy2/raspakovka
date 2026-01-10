@@ -642,24 +642,24 @@ function displayTimeline() {
 
 // Финансовый дашборд
 function displayFinanceDashboard() {
-    // Считаем поступления (оплаченные)
+    // Считаем поступления (оплаченные) - данные в CNY, делим на 1000
     const totalReceived = paymentsData.reduce((sum, payment) => {
         const amount = parseFloat(payment['Сумма поступления в cny\n(Самойленко)']) || 0;
-        return sum + amount;
+        return sum + amount / 1000;
     }, 0);
     
-    // Считаем ожидаемые поступления (не оплачено)
+    // Считаем ожидаемые поступления (не оплачено) - данные в CNY, делим на 1000
     const totalPending = paymentsData.reduce((sum, payment) => {
         if (payment['Статус оплаты'] === 'не оплачено') {
             const amount = parseFloat(payment['Выставленная сумма оплаты покупателем, CNY\n(Самойленко)']) || 0;
-            return sum + amount;
+            return sum + amount / 1000;
         }
         return sum;
     }, 0);
     
-    // Считаем долги
+    // Считаем долги - данные в CNY, делим на 1000
     const totalDebts = debtsData.reduce((sum, debt) => {
-        return sum + (parseFloat(debt['Размер в CNY']) || 0);
+        return sum + (parseFloat(debt['Размер в CNY']) || 0) / 1000;
     }, 0);
     
     const resolvedDebts = debtsData.filter(d => d['Статус'] === 'Выполнен').length;
@@ -705,7 +705,7 @@ function displayPaymentsChart() {
         if (!monthlyPayments[month]) {
             monthlyPayments[month] = 0;
         }
-        monthlyPayments[month] += amount;
+        monthlyPayments[month] += amount / 1000; // Данные в CNY, делим на 1000
     });
     
     const months = ['январь', 'февраль', 'март', 'апрель', 'май', 'июнь', 
@@ -778,7 +778,7 @@ function displayDebtsStatus() {
         if (!debtsByType[type]) {
             debtsByType[type] = { total: 0, resolved: 0, active: 0 };
         }
-        debtsByType[type].total += amount;
+        debtsByType[type].total += amount / 1000; // Данные в CNY, делим на 1000
         if (status === 'Выполнен') {
             debtsByType[type].resolved++;
         } else {
