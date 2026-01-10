@@ -805,7 +805,7 @@ function displayDebtsStatus() {
         return;
     }
     
-    container.innerHTML = Object.entries(debtsByInitiator)
+    const html = Object.entries(debtsByInitiator)
         .sort((a, b) => {
             const totalA = Object.values(a[1]).reduce((sum, agents) => {
                 return sum + Object.values(agents).reduce((agentSum, types) => {
@@ -849,6 +849,11 @@ function displayDebtsStatus() {
                     `).join('')}
             </div>
         `).join('');
+    
+    console.log('Длина HTML:', html.length);
+    console.log('Первые 500 символов HTML:', html.substring(0, 500));
+    
+    container.innerHTML = html;
 }
 
 // Финальная статистика
