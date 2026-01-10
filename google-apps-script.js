@@ -15,15 +15,15 @@
 
 function exportToJsonFile() {
   const spreadsheet = SpreadsheetApp.getActiveSpreadsheet();
-  const sheet = spreadsheet.getSheetByName('Лист 1');
+  const sheet = spreadsheet.getSheetByName('Лист1');
   
   if (!sheet) {
     throw new Error('Лист "Лист 1" не найден!');
   }
   
-  // Получаем все данные до столбца AX (50-й столбец)
+  // Получаем все данные до столбца AZ (52-й столбец)
   const lastRow = sheet.getLastRow();
-  const lastCol = 50; // AX = 50-й столбец
+  const lastCol = 52; // AZ = 52-й столбец (включая поле "Агент")
   
   if (lastRow < 2) {
     throw new Error('Нет данных для экспорта!');

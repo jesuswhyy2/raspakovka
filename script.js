@@ -233,12 +233,12 @@ function displayMonthlyChart() {
     });
 }
 
-// Топ клиенты
+// Топ агенты
 function displayTopClients() {
     const clientsData = {};
     
     dealsData.forEach(deal => {
-        const client = deal['Покупатель'] || 'Не указан';
+        const client = deal['Агент\n(Знаменский)'] || 'Не указан';
         const volume = parseFloat(deal['Объем продажи']) || 0;
         const revenue = parseFloat(deal['Сумма, тыс. CNY']) || 0;
         
