@@ -675,17 +675,6 @@ function displayFinanceDashboard() {
                 <div class="finance-value">${Math.round(totalReceived).toLocaleString('ru-RU')}</div>
                 <div class="finance-label">Получено, тыс. CNY</div>
             </div>
-            <div class="finance-card pending">
-                <div class="finance-icon">⏳</div>
-                <div class="finance-value">${Math.round(totalPending).toLocaleString('ru-RU')}</div>
-                <div class="finance-label">Ожидается, тыс. CNY</div>
-            </div>
-            <div class="finance-card debts">
-                <div class="finance-icon">⚠️</div>
-                <div class="finance-value">${Math.round(totalDebts).toLocaleString('ru-RU')}</div>
-                <div class="finance-label">Долги, тыс. CNY</div>
-                <div class="finance-details">${resolvedDebts} решено • ${activeDebts} в работе</div>
-            </div>
         </div>
     `;
 }
