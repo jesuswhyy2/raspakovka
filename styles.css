@@ -1010,7 +1010,24 @@ body {
 .debts-list {
     display: flex;
     flex-direction: column;
+    gap: 40px;
+}
+
+.debt-group {
+    display: flex;
+    flex-direction: column;
     gap: 20px;
+}
+
+.debt-initiator {
+    font-size: 28px;
+    font-weight: 800;
+    color: var(--accent);
+    margin-bottom: 10px;
+    padding-left: 10px;
+    border-left: 4px solid var(--accent);
+    text-transform: uppercase;
+    letter-spacing: 1px;
 }
 
 .debt-item {
@@ -1019,6 +1036,7 @@ body {
     border-radius: 20px;
     border: 1px solid rgba(255, 255, 255, 0.1);
     transition: all 0.3s ease;
+    margin-left: 20px;
 }
 
 .debt-item:hover {
