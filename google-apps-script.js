@@ -18,7 +18,7 @@ function exportAllSheetsToJson() {
   const allData = {};
   
   // Список листов для экспорта
-  const sheetNames = ['Лист1', 'Получение средств', 'Долги', 'Оплата поставщикам'];
+  const sheetNames = ['Лист1', 'Получение средств', 'Долги', 'Оплата поставщикам', 'Закупки'];
   
   sheetNames.forEach(sheetName => {
     const sheet = spreadsheet.getSheetByName(sheetName);
@@ -57,7 +57,8 @@ function exportAllSheetsToJson() {
     const key = sheetName === 'Лист1' ? 'deals' : 
                 sheetName === 'Получение средств' ? 'payments' :
                 sheetName === 'Долги' ? 'debts' :
-                sheetName === 'Оплата поставщикам' ? 'supplier_payments' : sheetName;
+                sheetName === 'Оплата поставщикам' ? 'supplier_payments' :
+                sheetName === 'Закупки' ? 'purchases' : sheetName;
     
     allData[key] = jsonData;
   });
