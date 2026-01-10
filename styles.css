@@ -1056,13 +1056,29 @@ body {
     letter-spacing: 1px;
 }
 
+.debt-agent-group {
+    margin-left: 20px;
+    margin-bottom: 25px;
+}
+
+.debt-agent {
+    font-size: 20px;
+    font-weight: 700;
+    color: #06b6d4;
+    margin-bottom: 15px;
+    padding-left: 15px;
+    border-left: 3px solid #06b6d4;
+    letter-spacing: 0.5px;
+}
+
 .debt-item {
     padding: 30px;
     background: rgba(255, 255, 255, 0.03);
     border-radius: 20px;
     border: 1px solid rgba(255, 255, 255, 0.1);
     transition: all 0.3s ease;
-    margin-left: 20px;
+    margin-left: 40px;
+    margin-bottom: 10px;
 }
 
 .debt-item:hover {

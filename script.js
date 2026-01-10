@@ -773,6 +773,7 @@ function displayDebtsStatus() {
     
     debtsData.forEach(debt => {
         const initiator = debt['Инициатор претензии'] || 'Не указан';
+        const agent = debt['Агент'] || 'Не указан';
         const type = debt['Тип претензии'] || 'Не указан';
         const amount = parseFloat(debt['Размер в CNY']) || 0;
         const status = debt['Статус'];
@@ -780,14 +781,17 @@ function displayDebtsStatus() {
         if (!debtsByInitiator[initiator]) {
             debtsByInitiator[initiator] = {};
         }
-        if (!debtsByInitiator[initiator][type]) {
-            debtsByInitiator[initiator][type] = { total: 0, resolved: 0, active: 0 };
+        if (!debtsByInitiator[initiator][agent]) {
+            debtsByInitiator[initiator][agent] = {};
         }
-        debtsByInitiator[initiator][type].total += amount / 1000; // Данные в CNY, делим на 1000
+        if (!debtsByInitiator[initiator][agent][type]) {
+            debtsByInitiator[initiator][agent][type] = { total: 0, resolved: 0, active: 0 };
+        }
+        debtsByInitiator[initiator][agent][type].total += amount / 1000; // Данные в CNY, делим на 1000
         if (status === 'Выполнен') {
-            debtsByInitiator[initiator][type].resolved++;
+            debtsByInitiator[initiator][agent][type].resolved++;
         } else {
-            debtsByInitiator[initiator][type].active++;
+            debtsByInitiator[initiator][agent][type].active++;
         }
     });
     
@@ -796,25 +800,44 @@ function displayDebtsStatus() {
     
     container.innerHTML = Object.entries(debtsByInitiator)
         .sort((a, b) => {
-            const totalA = Object.values(a[1]).reduce((sum, data) => sum + data.total, 0);
-            const totalB = Object.values(b[1]).reduce((sum, data) => sum + data.total, 0);
+            const totalA = Object.values(a[1]).reduce((sum, agents) => {
+                return sum + Object.values(agents).reduce((agentSum, types) => {
+                    return agentSum + Object.values(types).reduce((typeSum, data) => typeSum + data.total, 0);
+                }, 0);
+            }, 0);
+            const totalB = Object.values(b[1]).reduce((sum, agents) => {
+                return sum + Object.values(agents).reduce((agentSum, types) => {
+                    return agentSum + Object.values(types).reduce((typeSum, data) => typeSum + data.total, 0);
+                }, 0);
+            }, 0);
             return totalB - totalA;
         })
-        .map(([initiator, types]) => `
+        .map(([initiator, agents]) => `
             <div class="debt-group">
                 <div class="debt-initiator">${initiator}</div>
-                ${Object.entries(types)
-                    .sort((a, b) => b[1].total - a[1].total)
-                    .map(([type, data]) => `
-                        <div class="debt-item">
-                            <div class="debt-header">
-                                <div class="debt-type">${type}</div>
-                                <div class="debt-amount">${Math.round(data.total).toLocaleString('ru-RU')} тыс. CNY</div>
-                            </div>
-                            <div class="debt-status">
-                                <span class="debt-badge resolved">✓ ${data.resolved} решено</span>
-                                ${data.active > 0 ? `<span class="debt-badge active">⚡ ${data.active} в работе</span>` : ''}
-                            </div>
+                ${Object.entries(agents)
+                    .sort((a, b) => {
+                        const totalA = Object.values(a[1]).reduce((sum, data) => sum + data.total, 0);
+                        const totalB = Object.values(b[1]).reduce((sum, data) => sum + data.total, 0);
+                        return totalB - totalA;
+                    })
+                    .map(([agent, types]) => `
+                        <div class="debt-agent-group">
+                            <div class="debt-agent">${agent}</div>
+                            ${Object.entries(types)
+                                .sort((a, b) => b[1].total - a[1].total)
+                                .map(([type, data]) => `
+                                    <div class="debt-item">
+                                        <div class="debt-header">
+                                            <div class="debt-type">${type}</div>
+                                            <div class="debt-amount">${Math.round(data.total).toLocaleString('ru-RU')} тыс. CNY</div>
+                                        </div>
+                                        <div class="debt-status">
+                                            <span class="debt-badge resolved">✓ ${data.resolved} решено</span>
+                                            ${data.active > 0 ? `<span class="debt-badge active">⚡ ${data.active} в работе</span>` : ''}
+                                        </div>
+                                    </div>
+                                `).join('')}
                         </div>
                     `).join('')}
             </div>
