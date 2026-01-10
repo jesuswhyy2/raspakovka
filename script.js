@@ -854,6 +854,11 @@ function displayDebtsStatus() {
     console.log('Первые 500 символов HTML:', html.substring(0, 500));
     
     container.innerHTML = html;
+    
+    console.log('HTML установлен в контейнер');
+    console.log('Количество элементов .debt-group:', container.querySelectorAll('.debt-group').length);
+    console.log('Высота контейнера:', container.offsetHeight);
+    console.log('Видимость контейнера:', window.getComputedStyle(container).display);
 }
 
 // Финальная статистика
