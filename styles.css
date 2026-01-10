@@ -338,8 +338,30 @@ body {
 }
 
 /* ===== CHART SECTION ===== */
-#chart-section {
+#chart-section, #combined-charts-section {
     background: var(--bg-card);
+}
+
+.charts-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(500px, 1fr));
+    gap: 40px;
+    margin-top: 40px;
+}
+
+.chart-card {
+    background: rgba(255, 255, 255, 0.02);
+    padding: 30px;
+    border-radius: 24px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.chart-subtitle {
+    font-size: 22px;
+    font-weight: 700;
+    color: var(--text-primary);
+    margin-bottom: 25px;
+    text-align: center;
 }
 
 .chart-wrapper {
@@ -890,6 +912,10 @@ body {
     }
 
     .record-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .charts-grid {
         grid-template-columns: 1fr;
     }
 

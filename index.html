@@ -62,37 +62,37 @@
         </div>
     </section>
 
-    <!-- Payments Chart Section -->
-    <section id="payments-section" class="section">
+    <!-- Combined Charts Section -->
+    <section id="combined-charts-section" class="section">
         <div class="container">
             <h2 class="section-title">
-                <span class="title-icon">💵</span>
-                Денежные поступления
-            </h2>
-            <div class="chart-wrapper">
-                <canvas id="paymentsChart"></canvas>
-            </div>
-        </div>
-    </section>
-
-    <!-- Chart Section -->
-    <section id="chart-section" class="section">
-        <div class="container">
-            <h2 class="section-title">
-                <span class="title-icon">📈</span>
+                <span class="title-icon">📊</span>
                 Динамика по месяцам
             </h2>
-            <div class="chart-wrapper">
-                <canvas id="monthlyChart"></canvas>
-            </div>
-            <div class="chart-legend">
-                <div class="legend-item">
-                    <span class="legend-color volume-color"></span>
-                    <span>Объём (тонн)</span>
+            
+            <div class="charts-grid">
+                <div class="chart-card">
+                    <h3 class="chart-subtitle">💵 Денежные поступления</h3>
+                    <div class="chart-wrapper">
+                        <canvas id="paymentsChart"></canvas>
+                    </div>
                 </div>
-                <div class="legend-item">
-                    <span class="legend-color deals-color"></span>
-                    <span>Количество сделок</span>
+                
+                <div class="chart-card">
+                    <h3 class="chart-subtitle">📈 Объём и количество сделок</h3>
+                    <div class="chart-wrapper">
+                        <canvas id="monthlyChart"></canvas>
+                    </div>
+                    <div class="chart-legend">
+                        <div class="legend-item">
+                            <span class="legend-color volume-color"></span>
+                            <span>Объём (тонн)</span>
+                        </div>
+                        <div class="legend-item">
+                            <span class="legend-color deals-color"></span>
+                            <span>Количество сделок</span>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
