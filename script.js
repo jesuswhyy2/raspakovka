@@ -1,10 +1,14 @@
-console.log('📊 Script.js v4 - Обновленный дизайн с глитч-эффектом!');
+console.log('📊 Script.js v5 - Добавлена финансовая аналитика!');
 
 // Глобальные переменные
 let dealsData = [];
+let paymentsData = [];
+let debtsData = [];
+let supplierPaymentsData = [];
 let monthlyChart = null;
 let basisChart = null;
 let geographyChart = null;
+let paymentsChart = null;
 
 // Цветовые палитры
 const chartColors = {
@@ -45,27 +49,36 @@ async function loadData() {
     try {
         console.log('Начинаю загрузку данных...');
         const response = await fetch('data.json');
-        const data = await response.json();
+        const allData = await response.json();
+        
+        // Распаковываем данные
+        const deals = allData.deals || [];
+        paymentsData = allData.payments || [];
+        debtsData = allData.debts || [];
+        supplierPaymentsData = allData.supplier_payments || [];
         
         // Фильтруем только сделки 2025 года
-        dealsData = data.filter(deal => {
+        dealsData = deals.filter(deal => {
             const confirmDate = deal['Дата подтверждения сделки'];
             if (!confirmDate) return false;
             const year = new Date(confirmDate).getFullYear();
             return year === 2025;
         });
         
-        console.log(`Загружено ${dealsData.length} сделок 2025 года`);
+        console.log(`Загружено: ${dealsData.length} сделок, ${paymentsData.length} платежей, ${debtsData.length} долгов`);
         
         // Инициализация всех секций
         displayHeroStats();
+        displayFinanceDashboard();
         displayMonthlyChart();
+        displayPaymentsChart();
         displayTopClients();
         displayTopProducts();
         displayAvgPrices();
         displayBasisChart();
         displayGeographyChart();
         displayRecordDeal();
+        displayDebtsStatus();
         displayFinalStats();
         
         initScrollAnimations();
@@ -625,6 +638,171 @@ function displayTimeline() {
             </div>
         </div>
     `).join('');
+}
+
+// Финансовый дашборд
+function displayFinanceDashboard() {
+    // Считаем поступления (оплаченные)
+    const totalReceived = paymentsData.reduce((sum, payment) => {
+        const amount = parseFloat(payment['Сумма поступления в cny\n(Самойленко)']) || 0;
+        return sum + amount;
+    }, 0);
+    
+    // Считаем ожидаемые поступления (не оплачено)
+    const totalPending = paymentsData.reduce((sum, payment) => {
+        if (payment['Статус оплаты'] === 'не оплачено') {
+            const amount = parseFloat(payment['Выставленная сумма оплаты покупателем, CNY\n(Самойленко)']) || 0;
+            return sum + amount;
+        }
+        return sum;
+    }, 0);
+    
+    // Считаем долги
+    const totalDebts = debtsData.reduce((sum, debt) => {
+        return sum + (parseFloat(debt['Размер в CNY']) || 0);
+    }, 0);
+    
+    const resolvedDebts = debtsData.filter(d => d['Статус'] === 'Выполнен').length;
+    const activeDebts = debtsData.filter(d => d['Статус'] !== 'Выполнен').length;
+    
+    const container = document.getElementById('financeDashboard');
+    if (!container) return;
+    
+    container.innerHTML = `
+        <div class="finance-grid">
+            <div class="finance-card received">
+                <div class="finance-icon">💵</div>
+                <div class="finance-value">${Math.round(totalReceived).toLocaleString('ru-RU')}</div>
+                <div class="finance-label">Получено, тыс. CNY</div>
+            </div>
+            <div class="finance-card pending">
+                <div class="finance-icon">⏳</div>
+                <div class="finance-value">${Math.round(totalPending).toLocaleString('ru-RU')}</div>
+                <div class="finance-label">Ожидается, тыс. CNY</div>
+            </div>
+            <div class="finance-card debts">
+                <div class="finance-icon">⚠️</div>
+                <div class="finance-value">${Math.round(totalDebts).toLocaleString('ru-RU')}</div>
+                <div class="finance-label">Долги, тыс. CNY</div>
+                <div class="finance-details">${resolvedDebts} решено • ${activeDebts} в работе</div>
+            </div>
+        </div>
+    `;
+}
+
+// График поступлений по месяцам
+function displayPaymentsChart() {
+    const monthlyPayments = {};
+    
+    paymentsData.forEach(payment => {
+        const dateStr = payment['Дата прихода\n(Самойленко)'];
+        if (!dateStr) return;
+        
+        const date = new Date(dateStr);
+        const month = date.toLocaleString('ru-RU', { month: 'long' });
+        const amount = parseFloat(payment['Сумма поступления в cny\n(Самойленко)']) || 0;
+        
+        if (!monthlyPayments[month]) {
+            monthlyPayments[month] = 0;
+        }
+        monthlyPayments[month] += amount;
+    });
+    
+    const months = ['январь', 'февраль', 'март', 'апрель', 'май', 'июнь', 
+                    'июль', 'август', 'сентябрь', 'октябрь', 'ноябрь', 'декабрь'];
+    
+    const labels = months.filter(m => monthlyPayments[m]);
+    const values = labels.map(m => Math.round(monthlyPayments[m]));
+    
+    const ctx = document.getElementById('paymentsChart');
+    if (!ctx) return;
+    
+    if (paymentsChart) paymentsChart.destroy();
+    
+    paymentsChart = new Chart(ctx.getContext('2d'), {
+        type: 'bar',
+        data: {
+            labels: labels.map(l => l.charAt(0).toUpperCase() + l.slice(1)),
+            datasets: [{
+                label: 'Поступления, тыс. CNY',
+                data: values,
+                backgroundColor: 'rgba(16, 185, 129, 0.8)',
+                borderColor: '#10b981',
+                borderWidth: 2,
+                borderRadius: 8
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: true,
+            aspectRatio: 2,
+            plugins: {
+                legend: { display: false },
+                tooltip: {
+                    backgroundColor: 'rgba(17, 24, 39, 0.95)',
+                    padding: 16,
+                    borderColor: '#10b981',
+                    borderWidth: 1,
+                    callbacks: {
+                        label: (context) => context.parsed.y.toLocaleString('ru-RU') + ' тыс. CNY'
+                    }
+                }
+            },
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    ticks: {
+                        color: '#9ca3af',
+                        callback: (value) => value.toLocaleString('ru-RU')
+                    },
+                    grid: { color: 'rgba(255, 255, 255, 0.05)' }
+                },
+                x: {
+                    ticks: { color: '#9ca3af' },
+                    grid: { display: false }
+                }
+            }
+        }
+    });
+}
+
+// Статус долгов
+function displayDebtsStatus() {
+    const debtsByType = {};
+    
+    debtsData.forEach(debt => {
+        const type = debt['Тип претензии'] || 'Не указан';
+        const amount = parseFloat(debt['Размер в CNY']) || 0;
+        const status = debt['Статус'];
+        
+        if (!debtsByType[type]) {
+            debtsByType[type] = { total: 0, resolved: 0, active: 0 };
+        }
+        debtsByType[type].total += amount;
+        if (status === 'Выполнен') {
+            debtsByType[type].resolved++;
+        } else {
+            debtsByType[type].active++;
+        }
+    });
+    
+    const container = document.getElementById('debtsStatus');
+    if (!container) return;
+    
+    container.innerHTML = Object.entries(debtsByType)
+        .sort((a, b) => b[1].total - a[1].total)
+        .map(([type, data]) => `
+            <div class="debt-item">
+                <div class="debt-header">
+                    <div class="debt-type">${type}</div>
+                    <div class="debt-amount">${Math.round(data.total).toLocaleString('ru-RU')} тыс. CNY</div>
+                </div>
+                <div class="debt-status">
+                    <span class="debt-badge resolved">✓ ${data.resolved} решено</span>
+                    ${data.active > 0 ? `<span class="debt-badge active">⚡ ${data.active} в работе</span>` : ''}
+                </div>
+            </div>
+        `).join('');
 }
 
 // Финальная статистика

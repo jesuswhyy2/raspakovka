@@ -10,7 +10,78 @@
  */
 
 // ============================================
-// ВАРИАНТ 1: Сохранение JSON в Google Drive
+// ЭКСПОРТ ВСЕХ ЛИСТОВ В ОДИН JSON
+// ============================================
+
+function exportAllSheetsToJson() {
+  const spreadsheet = SpreadsheetApp.getActiveSpreadsheet();
+  const allData = {};
+  
+  // Список листов для экспорта
+  const sheetNames = ['Лист1', 'Получение средств', 'Долги', 'Оплата поставщикам'];
+  
+  sheetNames.forEach(sheetName => {
+    const sheet = spreadsheet.getSheetByName(sheetName);
+    
+    if (!sheet) {
+      Logger.log(`Лист "${sheetName}" не найден, пропускаю...`);
+      return;
+    }
+    
+    const lastRow = sheet.getLastRow();
+    const lastCol = sheet.getLastColumn();
+    
+    if (lastRow < 2) {
+      Logger.log(`Лист "${sheetName}" пустой, пропускаю...`);
+      return;
+    }
+    
+    // Получаем заголовки
+    const headers = sheet.getRange(1, 1, 1, lastCol).getValues()[0];
+    
+    // Получаем данные
+    const data = sheet.getRange(2, 1, lastRow - 1, lastCol).getValues();
+    
+    // Преобразуем в массив объектов
+    const jsonData = data.map(row => {
+      const obj = {};
+      headers.forEach((header, index) => {
+        if (header) {
+          obj[header] = row[index];
+        }
+      });
+      return obj;
+    });
+    
+    // Сохраняем под ключом с именем листа
+    const key = sheetName === 'Лист1' ? 'deals' : 
+                sheetName === 'Получение средств' ? 'payments' :
+                sheetName === 'Долги' ? 'debts' :
+                sheetName === 'Оплата поставщикам' ? 'supplier_payments' : sheetName;
+    
+    allData[key] = jsonData;
+  });
+  
+  // Создаем JSON
+  const json = JSON.stringify(allData, null, 2);
+  
+  // Сохраняем в Google Drive
+  const fileName = `data_all_${new Date().toISOString().split('T')[0]}.json`;
+  const file = DriveApp.createFile(fileName, json, 'application/json');
+  
+  Logger.log('JSON файл создан: ' + file.getUrl());
+  
+  SpreadsheetApp.getUi().alert(
+    'Успешно экспортировано!',
+    'Все листы сохранены в Google Drive:\n' + file.getUrl(),
+    SpreadsheetApp.getUi().ButtonSet.OK
+  );
+  
+  return file.getUrl();
+}
+
+// ============================================
+// ВАРИАНТ 1: Сохранение JSON в Google Drive (старый вариант)
 // ============================================
 
 function exportToJsonFile() {

@@ -62,6 +62,17 @@
         </div>
     </section>
 
+    <!-- Finance Dashboard Section -->
+    <section id="finance-section" class="section">
+        <div class="container">
+            <h2 class="section-title">
+                <span class="title-icon">💰</span>
+                Финансовая аналитика
+            </h2>
+            <div id="financeDashboard"></div>
+        </div>
+    </section>
+
     <!-- Chart Section -->
     <section id="chart-section" class="section">
         <div class="container">
@@ -74,6 +85,31 @@
             </div>
             <div class="chart-legend">
                 <div class="legend-item">
+                    <span class="legend-color volume-color"></span>
+                    <span>Объём (тонн)</span>
+                </div>
+                <div class="legend-item">
+                    <span class="legend-color deals-color"></span>
+                    <span>Количество сделок</span>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Payments Chart Section -->
+    <section id="payments-section" class="section">
+        <div class="container">
+            <h2 class="section-title">
+                <span class="title-icon">💵</span>
+                Денежные поступления
+            </h2>
+            <div class="chart-wrapper">
+                <canvas id="paymentsChart"></canvas>
+            </div>
+        </div>
+    </section>
+
+    <!-- Chart Section -->                <div class="legend-item">
                     <span class="legend-color volume-color"></span>
                     <span>Объём (тонн)</span>
                 </div>
@@ -160,7 +196,16 @@
             <div id="recordDeal" class="record-card"></div>
         </div>
     </section>
-
+    <!-- Debts Status Section -->
+    <section id="debts-section" class="section">
+        <div class="container">
+            <h2 class="section-title">
+                <span class="title-icon">⚠️</span>
+                Статус долгов и претензий
+            </h2>
+            <div id="debtsStatus" class="debts-list"></div>
+        </div>
+    </section>
     <!-- Final Section -->
     <section id="final-section" class="section">
         <div class="container">
