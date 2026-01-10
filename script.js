@@ -817,8 +817,8 @@ function displayDebtsStatus() {
                 <div class="debt-initiator">${initiator}</div>
                 ${Object.entries(agents)
                     .sort((a, b) => {
-                        const totalA = Object.values(a[1]).reduce((sum, data) => sum + data.total, 0);
-                        const totalB = Object.values(b[1]).reduce((sum, data) => sum + data.total, 0);
+                        const totalA = Object.values(a[1]).reduce((sum, typeData) => sum + typeData.total, 0);
+                        const totalB = Object.values(b[1]).reduce((sum, typeData) => sum + typeData.total, 0);
                         return totalB - totalA;
                     })
                     .map(([agent, types]) => `
