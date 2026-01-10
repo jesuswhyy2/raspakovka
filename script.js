@@ -769,6 +769,8 @@ function displayPaymentsChart() {
 
 // Статус долгов
 function displayDebtsStatus() {
+    console.log('displayDebtsStatus вызвана, долгов:', debtsData.length);
+    
     const debtsByInitiator = {};
     
     debtsData.forEach(debt => {
@@ -795,8 +797,13 @@ function displayDebtsStatus() {
         }
     });
     
+    console.log('Сгруппированные долги:', debtsByInitiator);
+    
     const container = document.getElementById('debtsStatus');
-    if (!container) return;
+    if (!container) {
+        console.log('Контейнер debtsStatus не найден!');
+        return;
+    }
     
     container.innerHTML = Object.entries(debtsByInitiator)
         .sort((a, b) => {
