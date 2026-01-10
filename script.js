@@ -769,8 +769,6 @@ function displayPaymentsChart() {
 
 // Статус долгов
 function displayDebtsStatus() {
-    console.log('displayDebtsStatus вызвана, долгов:', debtsData.length);
-    
     const debtsByInitiator = {};
     
     debtsData.forEach(debt => {
@@ -797,13 +795,8 @@ function displayDebtsStatus() {
         }
     });
     
-    console.log('Сгруппированные долги:', debtsByInitiator);
-    
     const container = document.getElementById('debtsStatus');
-    if (!container) {
-        console.log('Контейнер debtsStatus не найден!');
-        return;
-    }
+    if (!container) return;
     
     const html = Object.entries(debtsByInitiator)
         .sort((a, b) => {
@@ -850,15 +843,7 @@ function displayDebtsStatus() {
             </div>
         `).join('');
     
-    console.log('Длина HTML:', html.length);
-    console.log('Первые 500 символов HTML:', html.substring(0, 500));
-    
     container.innerHTML = html;
-    
-    console.log('HTML установлен в контейнер');
-    console.log('Количество элементов .debt-group:', container.querySelectorAll('.debt-group').length);
-    console.log('Высота контейнера:', container.offsetHeight);
-    console.log('Видимость контейнера:', window.getComputedStyle(container).display);
 }
 
 // Финальная статистика

@@ -1039,9 +1039,6 @@ body {
     display: flex;
     flex-direction: column;
     gap: 40px;
-    border: 5px solid red !important;
-    padding: 20px;
-    min-height: 200px;
 }
 
 .debt-group {
