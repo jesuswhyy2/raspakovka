@@ -812,38 +812,77 @@ function displayDebtsStatus() {
             }, 0);
             return totalB - totalA;
         })
-        .map(([initiator, agents]) => `
+        .map(([initiator, agents], initiatorIndex) => {
+            const initiatorTotal = Object.values(agents).reduce((sum, agentTypes) => {
+                return sum + Object.values(agentTypes).reduce((typeSum, data) => typeSum + data.total, 0);
+            }, 0);
+            
+            return `
             <div class="debt-group">
-                <div class="debt-initiator">${initiator}</div>
-                ${Object.entries(agents)
-                    .sort((a, b) => {
-                        const totalA = Object.values(a[1]).reduce((sum, typeData) => sum + typeData.total, 0);
-                        const totalB = Object.values(b[1]).reduce((sum, typeData) => sum + typeData.total, 0);
-                        return totalB - totalA;
-                    })
-                    .map(([agent, types]) => `
-                        <div class="debt-agent-group">
-                            <div class="debt-agent">${agent}</div>
-                            ${Object.entries(types)
-                                .sort((a, b) => b[1].total - a[1].total)
-                                .map(([type, data]) => `
-                                    <div class="debt-item">
-                                        <div class="debt-header">
-                                            <div class="debt-type">${type}</div>
-                                            <div class="debt-amount">${Math.round(data.total).toLocaleString('ru-RU')} тыс. CNY</div>
-                                        </div>
-                                        <div class="debt-status">
-                                            <span class="debt-badge resolved">✓ ${data.resolved} решено</span>
-                                            ${data.active > 0 ? `<span class="debt-badge active">⚡ ${data.active} в работе</span>` : ''}
-                                        </div>
+                <div class="debt-initiator-header" onclick="toggleDebtGroup('initiator-${initiatorIndex}')">
+                    <div class="debt-initiator-title">
+                        <span class="toggle-icon" id="icon-initiator-${initiatorIndex}">▼</span>
+                        ${initiator}
+                    </div>
+                    <div class="debt-total">${Math.round(initiatorTotal).toLocaleString('ru-RU')} тыс. CNY</div>
+                </div>
+                <div class="debt-initiator-content" id="initiator-${initiatorIndex}">
+                    ${Object.entries(agents)
+                        .sort((a, b) => {
+                            const totalA = Object.values(a[1]).reduce((sum, typeData) => sum + typeData.total, 0);
+                            const totalB = Object.values(b[1]).reduce((sum, typeData) => sum + typeData.total, 0);
+                            return totalB - totalA;
+                        })
+                        .map(([agent, types], agentIndex) => {
+                            const agentTotal = Object.values(types).reduce((sum, data) => sum + data.total, 0);
+                            const agentId = `agent-${initiatorIndex}-${agentIndex}`;
+                            
+                            return `
+                            <div class="debt-agent-group">
+                                <div class="debt-agent-header" onclick="toggleDebtGroup('${agentId}')">
+                                    <div class="debt-agent-title">
+                                        <span class="toggle-icon" id="icon-${agentId}">▼</span>
+                                        ${agent}
                                     </div>
-                                `).join('')}
-                        </div>
-                    `).join('')}
+                                    <div class="debt-agent-total">${Math.round(agentTotal).toLocaleString('ru-RU')} тыс. CNY</div>
+                                </div>
+                                <div class="debt-agent-content" id="${agentId}">
+                                    ${Object.entries(types)
+                                        .sort((a, b) => b[1].total - a[1].total)
+                                        .map(([type, data]) => `
+                                            <div class="debt-item">
+                                                <div class="debt-header">
+                                                    <div class="debt-type">${type}</div>
+                                                    <div class="debt-amount">${Math.round(data.total).toLocaleString('ru-RU')} тыс. CNY</div>
+                                                </div>
+                                                <div class="debt-status">
+                                                    <span class="debt-badge resolved">✓ ${data.resolved} решено</span>
+                                                    ${data.active > 0 ? `<span class="debt-badge active">⚡ ${data.active} в работе</span>` : ''}
+                                                </div>
+                                            </div>
+                                        `).join('')}
+                                </div>
+                            </div>
+                        `}).join('')}
+                </div>
             </div>
-        `).join('');
+        `}).join('');
     
     container.innerHTML = html;
+}
+
+// Переключение видимости групп долгов
+function toggleDebtGroup(id) {
+    const content = document.getElementById(id);
+    const icon = document.getElementById('icon-' + id);
+    
+    if (content.style.display === 'none') {
+        content.style.display = 'block';
+        icon.textContent = '▼';
+    } else {
+        content.style.display = 'none';
+        icon.textContent = '▶';
+    }
 }
 
 // Финальная статистика
