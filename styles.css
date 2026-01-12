@@ -305,13 +305,14 @@ body {
 }
 
 .stat-value {
-    font-size: 56px;
+    font-size: 48px;
     font-weight: 900;
     background: linear-gradient(135deg, var(--accent) 0%, var(--primary-light) 100%);
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     background-clip: text;
     margin-bottom: 10px;
+    word-break: break-word;
 }
 
 .stat-label {

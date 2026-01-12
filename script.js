@@ -1289,25 +1289,6 @@ function displayBuyerPaymentsAnalytics() {
                     `).join('')}
                 </div>
             </div>
-            
-            <div class="payments-section">
-                <h3 class="payments-subtitle">💰 Топ 10 покупателей по сумме платежей</h3>
-                <div class="buyers-list">
-                    ${topBuyersByAmount.map(([buyer, stats], index) => `
-                        <div class="buyer-item">
-                            <div class="buyer-rank">#${index + 1}</div>
-                            <div class="buyer-info">
-                                <div class="buyer-name">${buyer}</div>
-                                <div class="buyer-details">
-                                    <span class="detail-badge">💵 ${Math.round(stats.totalAmount / 1000).toLocaleString('ru-RU')} тыс. CNY</span>
-                                    <span class="detail-badge">💳 ${stats.totalPayments} платежей</span>
-                                    <span class="detail-badge">⏱️ ${stats.avgPaymentDays !== null ? Math.round(stats.avgPaymentDays) + ' дн.' : 'нет данных'}</span>
-                                </div>
-                            </div>
-                        </div>
-                    `).join('')}
-                </div>
-            </div>
         </div>
     `;
 }
