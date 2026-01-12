@@ -6,6 +6,7 @@ let paymentsData = [];
 let debtsData = [];
 let supplierPaymentsData = [];
 let purchasesData = [];
+let buyerPaymentsData = [];
 let monthlyChart = null;
 let basisChart = null;
 let geographyChart = null;
@@ -53,6 +54,11 @@ async function loadData() {
         const response = await fetch('data.json');
         const allData = await response.json();
         
+        // Загрузка данных о платежах покупателей
+        const paymentsResponse = await fetch('payments_2026-01-12.json');
+        buyerPaymentsData = await paymentsResponse.json();
+        console.log(`Загружено ${buyerPaymentsData.length} записей о платежах покупателей`);
+        
         // Распаковываем данные
         const deals = allData.deals || [];
         paymentsData = allData.payments || [];
@@ -86,6 +92,7 @@ async function loadData() {
         displayTopClients();
         displayTopProducts();
         displayPurchasesAnalytics();
+        displayBuyerPaymentsAnalytics();
         displayAvgPrices();
         displayBasisChart();
         displayGeographyChart();
@@ -1046,6 +1053,257 @@ function displayPurchasesAnalytics() {
                             <div class="region-rank">#${index + 1}</div>
                             <div class="region-name">${region}</div>
                             <div class="region-volume">${Math.round(volume).toLocaleString('ru-RU')} т</div>
+                        </div>
+                    `).join('')}
+                </div>
+            </div>
+        </div>
+    `;
+}
+
+// Аналитика платежей покупателей
+function displayBuyerPaymentsAnalytics() {
+    if (!buyerPaymentsData || buyerPaymentsData.length === 0) return;
+    
+    const container = document.getElementById('paymentsAnalytics');
+    if (!container) return;
+    
+    // 1. Статистика по покупателям
+    const buyerStats = {};
+    
+    buyerPaymentsData.forEach(payment => {
+        const buyer = payment['Покупатель'] || 'Неизвестно';
+        const sendDate = payment['Факт дата отправки документов для оплаты'];
+        const receiveDate = payment['Дата прихода\n(Самойленко)'];
+        const amount = parseFloat(payment['Выставленная сумма оплаты покупателем, CNY\n(Самойленко)']) || 0;
+        const status = payment['Статус оплаты'] || 'не оплачено';
+        
+        if (!buyerStats[buyer]) {
+            buyerStats[buyer] = {
+                totalPayments: 0,
+                paidPayments: 0,
+                totalAmount: 0,
+                paidAmount: 0,
+                paymentDays: [],
+                totalDays: 0
+            };
+        }
+        
+        buyerStats[buyer].totalPayments++;
+        buyerStats[buyer].totalAmount += amount;
+        
+        if (status !== 'не оплачено' && sendDate && receiveDate) {
+            const send = new Date(sendDate);
+            const receive = new Date(receiveDate);
+            const days = Math.round((receive - send) / (1000 * 60 * 60 * 24));
+            
+            if (days >= 0 && days < 365) {
+                buyerStats[buyer].paymentDays.push(days);
+                buyerStats[buyer].paidPayments++;
+                buyerStats[buyer].paidAmount += amount;
+            }
+        }
+    });
+    
+    // Вычисляем средний срок оплаты для каждого покупателя
+    Object.values(buyerStats).forEach(stats => {
+        if (stats.paymentDays.length > 0) {
+            stats.avgPaymentDays = stats.paymentDays.reduce((a, b) => a + b, 0) / stats.paymentDays.length;
+        } else {
+            stats.avgPaymentDays = null;
+        }
+    });
+    
+    // Топ покупателей по количеству платежей
+    const topBuyersByCount = Object.entries(buyerStats)
+        .sort((a, b) => b[1].totalPayments - a[1].totalPayments)
+        .slice(0, 10);
+    
+    // Топ покупателей по сумме
+    const topBuyersByAmount = Object.entries(buyerStats)
+        .sort((a, b) => b[1].totalAmount - a[1].totalAmount)
+        .slice(0, 10);
+    
+    // 2. Статистика по типам платежей
+    const paymentTypes = {};
+    
+    buyerPaymentsData.forEach(payment => {
+        let type = payment['Аккредитив/ Аванс\n(Самойленко)'] || 'не указано';
+        type = type.toLowerCase().trim();
+        
+        // Нормализация типов
+        if (type.includes('аванс')) {
+            type = 'аванс';
+        } else if (type.includes('аккредитив')) {
+            type = 'аккредитив';
+        } else if (type.includes('cad') || type.includes('кад')) {
+            type = 'CAD';
+        } else if (type.includes('платеж против документов')) {
+            type = 'платеж против документов';
+        } else if (type === '' || type === 'не указано') {
+            type = 'не указано';
+        }
+        
+        const amount = parseFloat(payment['Выставленная сумма оплаты покупателем, CNY\n(Самойленко)']) || 0;
+        const sendDate = payment['Факт дата отправки документов для оплаты'];
+        const receiveDate = payment['Дата прихода\n(Самойленко)'];
+        
+        if (!paymentTypes[type]) {
+            paymentTypes[type] = {
+                count: 0,
+                totalAmount: 0,
+                paidCount: 0,
+                paidAmount: 0,
+                paymentDays: []
+            };
+        }
+        
+        paymentTypes[type].count++;
+        paymentTypes[type].totalAmount += amount;
+        
+        if (sendDate && receiveDate) {
+            const send = new Date(sendDate);
+            const receive = new Date(receiveDate);
+            const days = Math.round((receive - send) / (1000 * 60 * 60 * 24));
+            
+            if (days >= 0 && days < 365) {
+                paymentTypes[type].paymentDays.push(days);
+                paymentTypes[type].paidCount++;
+                paymentTypes[type].paidAmount += amount;
+            }
+        }
+    });
+    
+    // Вычисляем средний срок для каждого типа
+    Object.values(paymentTypes).forEach(stats => {
+        if (stats.paymentDays.length > 0) {
+            stats.avgPaymentDays = stats.paymentDays.reduce((a, b) => a + b, 0) / stats.paymentDays.length;
+        } else {
+            stats.avgPaymentDays = null;
+        }
+    });
+    
+    // Общая статистика
+    const totalPaymentsCount = buyerPaymentsData.length;
+    const totalAmount = buyerPaymentsData.reduce((sum, p) => sum + (parseFloat(p['Выставленная сумма оплаты покупателем, CNY\n(Самойленко)']) || 0), 0);
+    const paidPayments = buyerPaymentsData.filter(p => p['Статус оплаты'] !== 'не оплачено').length;
+    const uniqueBuyers = Object.keys(buyerStats).length;
+    
+    // Средний срок оплаты по всем платежам
+    const allPaymentDays = [];
+    buyerPaymentsData.forEach(payment => {
+        const sendDate = payment['Факт дата отправки документов для оплаты'];
+        const receiveDate = payment['Дата прихода\n(Самойленко)'];
+        
+        if (sendDate && receiveDate) {
+            const send = new Date(sendDate);
+            const receive = new Date(receiveDate);
+            const days = Math.round((receive - send) / (1000 * 60 * 60 * 24));
+            
+            if (days >= 0 && days < 365) {
+                allPaymentDays.push(days);
+            }
+        }
+    });
+    
+    const avgPaymentDays = allPaymentDays.length > 0 
+        ? allPaymentDays.reduce((a, b) => a + b, 0) / allPaymentDays.length 
+        : 0;
+    
+    // Отображение
+    container.innerHTML = `
+        <div class="payments-stats">
+            <div class="payment-stat-card">
+                <div class="stat-icon">💳</div>
+                <div class="stat-value">${totalPaymentsCount.toLocaleString('ru-RU')}</div>
+                <div class="stat-label">Всего платежей</div>
+            </div>
+            <div class="payment-stat-card">
+                <div class="stat-icon">💰</div>
+                <div class="stat-value">${Math.round(totalAmount / 1000).toLocaleString('ru-RU')}</div>
+                <div class="stat-label">Тыс. CNY выставлено</div>
+            </div>
+            <div class="payment-stat-card">
+                <div class="stat-icon">✅</div>
+                <div class="stat-value">${paidPayments.toLocaleString('ru-RU')}</div>
+                <div class="stat-label">Оплачено</div>
+            </div>
+            <div class="payment-stat-card">
+                <div class="stat-icon">👥</div>
+                <div class="stat-value">${uniqueBuyers}</div>
+                <div class="stat-label">Покупателей</div>
+            </div>
+            <div class="payment-stat-card">
+                <div class="stat-icon">⏱️</div>
+                <div class="stat-value">${Math.round(avgPaymentDays)}</div>
+                <div class="stat-label">Средний срок оплаты (дней)</div>
+            </div>
+        </div>
+        
+        <div class="payments-content">
+            <div class="payments-section">
+                <h3 class="payments-subtitle">💳 Статистика по типам платежей</h3>
+                <div class="payment-types-grid">
+                    ${Object.entries(paymentTypes)
+                        .sort((a, b) => b[1].count - a[1].count)
+                        .map(([type, stats]) => `
+                        <div class="payment-type-card">
+                            <div class="payment-type-header">
+                                <div class="payment-type-name">${type}</div>
+                                <div class="payment-type-count">${stats.count} платежей</div>
+                            </div>
+                            <div class="payment-type-details">
+                                <div class="detail-row">
+                                    <span class="detail-label">💵 Сумма:</span>
+                                    <span class="detail-value">${Math.round(stats.totalAmount / 1000).toLocaleString('ru-RU')} тыс. CNY</span>
+                                </div>
+                                <div class="detail-row">
+                                    <span class="detail-label">✅ Оплачено:</span>
+                                    <span class="detail-value">${stats.paidCount} из ${stats.count}</span>
+                                </div>
+                                <div class="detail-row">
+                                    <span class="detail-label">⏱️ Средний срок:</span>
+                                    <span class="detail-value">${stats.avgPaymentDays !== null ? Math.round(stats.avgPaymentDays) + ' дн.' : 'нет данных'}</span>
+                                </div>
+                            </div>
+                        </div>
+                    `).join('')}
+                </div>
+            </div>
+            
+            <div class="payments-section">
+                <h3 class="payments-subtitle">🏆 Топ 10 покупателей по количеству платежей</h3>
+                <div class="buyers-list">
+                    ${topBuyersByCount.map(([buyer, stats], index) => `
+                        <div class="buyer-item">
+                            <div class="buyer-rank">#${index + 1}</div>
+                            <div class="buyer-info">
+                                <div class="buyer-name">${buyer}</div>
+                                <div class="buyer-details">
+                                    <span class="detail-badge">💳 ${stats.totalPayments} платежей</span>
+                                    <span class="detail-badge">💵 ${Math.round(stats.totalAmount / 1000).toLocaleString('ru-RU')} тыс. CNY</span>
+                                    <span class="detail-badge">⏱️ ${stats.avgPaymentDays !== null ? Math.round(stats.avgPaymentDays) + ' дн.' : 'нет данных'}</span>
+                                </div>
+                            </div>
+                        </div>
+                    `).join('')}
+                </div>
+            </div>
+            
+            <div class="payments-section">
+                <h3 class="payments-subtitle">💰 Топ 10 покупателей по сумме платежей</h3>
+                <div class="buyers-list">
+                    ${topBuyersByAmount.map(([buyer, stats], index) => `
+                        <div class="buyer-item">
+                            <div class="buyer-rank">#${index + 1}</div>
+                            <div class="buyer-info">
+                                <div class="buyer-name">${buyer}</div>
+                                <div class="buyer-details">
+                                    <span class="detail-badge">💵 ${Math.round(stats.totalAmount / 1000).toLocaleString('ru-RU')} тыс. CNY</span>
+                                    <span class="detail-badge">💳 ${stats.totalPayments} платежей</span>
+                                    <span class="detail-badge">⏱️ ${stats.avgPaymentDays !== null ? Math.round(stats.avgPaymentDays) + ' дн.' : 'нет данных'}</span>
+                                </div>
+                            </div>
                         </div>
                     `).join('')}
                 </div>
