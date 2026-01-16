@@ -88,6 +88,7 @@ async function loadData() {
         displayHeroStats();
         displayFinanceDashboard();
         displayMonthlyChart();
+        displayProductVolumeChart();
         displayPaymentsChart();
         displayTopClients();
         displayTopProducts();
@@ -259,6 +260,133 @@ function displayMonthlyChart() {
                         font: { size: 12 }
                     },
                     grid: { display: false }
+                }
+            }
+        }
+    });
+}
+
+// График объемов продажи по продуктам в течение года
+function displayProductVolumeChart() {
+    const productMonthlyData = {};
+    
+    dealsData.forEach(deal => {
+        const date = deal['Дата подтверждения сделки'];
+        if (!date) return;
+        
+        const month = new Date(date).toLocaleString('ru-RU', { month: 'long' });
+        const product = deal['Продукт'] || 'Не указан';
+        const volume = parseFloat(deal['Объем продажи']) || 0;
+        
+        if (!productMonthlyData[product]) {
+            productMonthlyData[product] = {};
+        }
+        if (!productMonthlyData[product][month]) {
+            productMonthlyData[product][month] = 0;
+        }
+        productMonthlyData[product][month] += volume;
+    });
+    
+    // Сортируем продукты по общему объему
+    const productTotals = Object.entries(productMonthlyData).map(([product, months]) => {
+        const total = Object.values(months).reduce((sum, vol) => sum + vol, 0);
+        return { product, total, months };
+    }).sort((a, b) => b.total - a.total);
+    
+    // Берем топ-8 продуктов
+    const topProducts = productTotals.slice(0, 8);
+    
+    const months = ['январь', 'февраль', 'март', 'апрель', 'май', 'июнь', 
+                    'июль', 'август', 'сентябрь', 'октябрь', 'ноябрь', 'декабрь'];
+    
+    const colors = [
+        '#6366f1', '#06b6d4', '#8b5cf6', '#ec4899', 
+        '#f59e0b', '#10b981', '#ef4444', '#3b82f6'
+    ];
+    
+    const datasets = topProducts.map((item, index) => ({
+        label: item.product,
+        data: months.map(month => Math.round(item.months[month] || 0)),
+        borderColor: colors[index],
+        backgroundColor: colors[index] + '20',
+        borderWidth: 2,
+        fill: true,
+        tension: 0.4,
+        pointRadius: 4,
+        pointHoverRadius: 6,
+        pointBackgroundColor: colors[index],
+        pointBorderColor: '#fff',
+        pointBorderWidth: 2
+    }));
+    
+    const ctx = document.getElementById('productVolumeChart')?.getContext('2d');
+    if (!ctx) return;
+    
+    if (window.productVolumeChart && typeof window.productVolumeChart.destroy === 'function') {
+        window.productVolumeChart.destroy();
+    }
+    
+    window.productVolumeChart = new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels: months.map(m => m.charAt(0).toUpperCase() + m.slice(1, 3)),
+            datasets: datasets
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: true,
+            aspectRatio: 2.5,
+            interaction: {
+                mode: 'index',
+                intersect: false
+            },
+            plugins: {
+                legend: {
+                    display: true,
+                    position: 'bottom',
+                    labels: {
+                        color: '#9ca3af',
+                        font: { size: 12 },
+                        padding: 15,
+                        usePointStyle: true,
+                        pointStyle: 'circle'
+                    }
+                },
+                tooltip: {
+                    backgroundColor: 'rgba(17, 24, 39, 0.95)',
+                    titleColor: '#fff',
+                    bodyColor: '#fff',
+                    padding: 16,
+                    borderColor: '#6366f1',
+                    borderWidth: 1,
+                    displayColors: true,
+                    callbacks: {
+                        label: function(context) {
+                            return context.dataset.label + ': ' + context.parsed.y.toLocaleString('ru-RU') + ' т';
+                        }
+                    }
+                }
+            },
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    ticks: {
+                        color: '#9ca3af',
+                        font: { size: 12 },
+                        callback: (value) => value.toLocaleString('ru-RU') + ' т'
+                    },
+                    grid: { 
+                        color: 'rgba(255, 255, 255, 0.05)'
+                    }
+                },
+                x: {
+                    ticks: {
+                        color: '#9ca3af',
+                        font: { size: 12 }
+                    },
+                    grid: { 
+                        display: false
+                    }
                 }
             }
         }
