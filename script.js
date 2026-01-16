@@ -92,10 +92,10 @@ async function loadData() {
         displayTopClients();
         displayTopProducts();
         displayPurchasesAnalytics();
+        displayPurchasePrices();
         displayBuyerPaymentsAnalytics();
         displayAvgPrices();
-        displayBasisChart();
-        displayGeographyChart();
+        displayBasisAndGeography();
         displayRecordDeal();
         displayDebtsStatus();
         displayFinalStats();
@@ -314,21 +314,74 @@ function displayTopProducts() {
         productsData[product].deals += 1;
     });
     
-    const topProducts = Object.entries(productsData)
+    const sortedProducts = Object.entries(productsData)
         .sort((a, b) => b[1].volume - a[1].volume)
-        .slice(0, 5);
+        .slice(0, 8);
     
-    const container = document.getElementById('topProducts');
-    container.innerHTML = topProducts.map(([name, data], index) => `
-        <div class="top-item">
-            <div class="top-rank">#${index + 1}</div>
-            <div class="top-info">
-                <div class="top-name">${name}</div>
-                <div class="top-details">${data.deals} сделок</div>
+    const totalVolume = sortedProducts.reduce((sum, [, data]) => sum + data.volume, 0);
+    
+    const labels = sortedProducts.map(([name]) => name);
+    const values = sortedProducts.map(([, data]) => Math.round(data.volume));
+    const colors = chartColors.mixed;
+    
+    const ctx = document.getElementById('productsChart')?.getContext('2d');
+    if (!ctx) return;
+    
+    if (window.productsChart) window.productsChart.destroy();
+    
+    window.productsChart = new Chart(ctx, {
+        type: 'doughnut',
+        data: {
+            labels: labels,
+            datasets: [{
+                data: values,
+                backgroundColor: colors,
+                borderColor: '#111827',
+                borderWidth: 4,
+                hoverOffset: 20
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: true,
+            cutout: '65%',
+            plugins: {
+                legend: { display: false },
+                tooltip: {
+                    backgroundColor: 'rgba(17, 24, 39, 0.95)',
+                    titleColor: '#fff',
+                    bodyColor: '#fff',
+                    padding: 16,
+                    borderColor: '#6366f1',
+                    borderWidth: 1,
+                    callbacks: {
+                        label: (context) => {
+                            const percent = ((context.parsed / totalVolume) * 100).toFixed(1);
+                            return `${context.parsed.toLocaleString('ru-RU')} т (${percent}%)`;
+                        }
+                    }
+                }
+            }
+        }
+    });
+    
+    // Легенда
+    const legendContainer = document.getElementById('productsLegend');
+    if (!legendContainer) return;
+    
+    legendContainer.innerHTML = sortedProducts.map(([product, data], i) => {
+        const percent = ((data.volume / totalVolume) * 100).toFixed(1);
+        return `
+            <div class="legend-row">
+                <div class="legend-dot" style="background: ${colors[i]}"></div>
+                <div class="legend-info">
+                    <div class="legend-name">${product}</div>
+                    <div class="legend-stats">${data.deals} сделок • ${Math.round(data.volume).toLocaleString('ru-RU')} т</div>
+                </div>
+                <div class="legend-percent">${percent}%</div>
             </div>
-            <div class="top-value">${Math.round(data.volume).toLocaleString('ru-RU')} т</div>
-        </div>
-    `).join('');
+        `;
+    }).join('');
 }
 
 // Средняя цена продажи
@@ -1072,39 +1125,6 @@ function displayPurchasesAnalytics() {
         .sort((a, b) => b[1] - a[1])
         .slice(0, 10);
     
-    // 2. Средняя цена по продуктам
-    const productPrices = {};
-    const productCounts = {};
-    
-    purchasesData.forEach(purchase => {
-        const product = purchase['Продукт'] || 'Неизвестно';
-        const price = parseFloat(purchase['Цена закупки, т.р./тонн']) || 0;
-        
-        if (price > 0) {
-            productPrices[product] = (productPrices[product] || 0) + price;
-            productCounts[product] = (productCounts[product] || 0) + 1;
-        }
-    });
-    
-    const avgPricesByProduct = Object.entries(productPrices).map(([product, totalPrice]) => ({
-        product,
-        avgPrice: totalPrice / productCounts[product]
-    })).sort((a, b) => b.avgPrice - a.avgPrice);
-    
-    // 3. Топ регионов по объему закупок
-    const regionVolumes = {};
-    
-    purchasesData.forEach(purchase => {
-        const region = purchase['Регион'] || 'Неизвестно';
-        const volume = parseFloat(purchase['Объем контрактации, тонн']) || 0;
-        
-        regionVolumes[region] = (regionVolumes[region] || 0) + volume;
-    });
-    
-    const topRegions = Object.entries(regionVolumes)
-        .sort((a, b) => b[1] - a[1])
-        .slice(0, 5);
-    
     // Общая статистика
     const totalPurchaseVolume = purchasesData.reduce((sum, p) => sum + (parseFloat(p['Объем контрактации, тонн']) || 0), 0);
     const totalPurchaseSpending = purchasesData.reduce((sum, p) => {
@@ -1160,33 +1180,174 @@ function displayPurchasesAnalytics() {
                     `).join('')}
                 </div>
             </div>
-            
-            <div class="purchases-section">
-                <h3 class="purchases-subtitle">📊 Средние цены закупки</h3>
-                <div class="prices-list">
-                    ${avgPricesByProduct.map(({product, avgPrice}) => `
-                        <div class="price-item">
-                            <div class="price-product">${product}</div>
-                            <div class="price-value">${avgPrice.toFixed(1)} ₽/т</div>
-                        </div>
-                    `).join('')}
-                </div>
-            </div>
-            
-            <div class="purchases-section">
-                <h3 class="purchases-subtitle">🗺️ Топ регионов закупок</h3>
-                <div class="regions-list">
-                    ${topRegions.map(([region, volume], index) => `
-                        <div class="region-item">
-                            <div class="region-rank">#${index + 1}</div>
-                            <div class="region-name">${region}</div>
-                            <div class="region-volume">${Math.round(volume).toLocaleString('ru-RU')} т</div>
-                        </div>
-                    `).join('')}
-                </div>
-            </div>
         </div>
     `;
+}
+
+// Средние цены закупки с графиками по месяцам
+function displayPurchasePrices() {
+    if (!purchasesData || purchasesData.length === 0) return;
+    
+    const productPrices = {};
+    const productMonthlyPrices = {};
+    
+    // Собираем средние цены и данные по месяцам
+    purchasesData.forEach(purchase => {
+        const product = purchase['Продукт'] || 'Неизвестно';
+        const price = parseFloat(purchase['Цена закупки, т.р./тонн']) || 0;
+        const date = purchase['Дата регистрации сделки с поставщиком'];
+        
+        if (price > 0) {
+            if (!productPrices[product]) {
+                productPrices[product] = { totalPrice: 0, count: 0 };
+                productMonthlyPrices[product] = {};
+            }
+            productPrices[product].totalPrice += price;
+            productPrices[product].count += 1;
+            
+            // Группировка по месяцам
+            if (date) {
+                const month = new Date(date).toLocaleString('ru-RU', { month: 'long' });
+                if (!productMonthlyPrices[product][month]) {
+                    productMonthlyPrices[product][month] = { totalPrice: 0, count: 0 };
+                }
+                productMonthlyPrices[product][month].totalPrice += price;
+                productMonthlyPrices[product][month].count += 1;
+            }
+        }
+    });
+    
+    const avgPrices = Object.entries(productPrices)
+        .map(([product, data]) => ({
+            product,
+            avgPrice: data.totalPrice / data.count
+        }))
+        .sort((a, b) => b.avgPrice - a.avgPrice);
+    
+    const container = document.getElementById('purchasePrices');
+    if (!container) return;
+    
+    // Генерируем HTML с карточками и графиками
+    let html = '<div class="avg-prices-grid">';
+    
+    avgPrices.forEach(item => {
+        const monthlyData = productMonthlyPrices[item.product];
+        const months = ['январь', 'февраль', 'март', 'апрель', 'май', 'июнь', 
+                       'июль', 'август', 'сентябрь', 'октябрь', 'ноябрь', 'декабрь'];
+        
+        const chartData = months.map(month => {
+            if (monthlyData[month] && monthlyData[month].count > 0) {
+                return (monthlyData[month].totalPrice / monthlyData[month].count).toFixed(1);
+            }
+            return null;
+        });
+        
+        const hasChartData = chartData.some(val => val !== null);
+        const chartId = `purchase-price-chart-${item.product.replace(/\s+/g, '-')}`;
+        
+        html += `
+            <div class="stat-card-with-chart">
+                <div class="stat-card">
+                    <div class="stat-card-icon">📊</div>
+                    <div class="stat-card-title">${item.product}</div>
+                    <div class="stat-card-value">${item.avgPrice.toFixed(1)}</div>
+                    <div class="stat-card-subtitle">тыс. ₽/тонна</div>
+                </div>
+                ${hasChartData ? `
+                    <div class="price-chart-wrapper">
+                        <canvas id="${chartId}"></canvas>
+                    </div>
+                ` : ''}
+            </div>
+        `;
+    });
+    
+    html += '</div>';
+    container.innerHTML = html;
+    
+    // Создаем графики для каждого продукта
+    avgPrices.forEach(item => {
+        const monthlyData = productMonthlyPrices[item.product];
+        const months = ['январь', 'февраль', 'март', 'апрель', 'май', 'июнь', 
+                       'июль', 'август', 'сентябрь', 'октябрь', 'ноябрь', 'декабрь'];
+        
+        const chartData = months.map(month => {
+            if (monthlyData[month] && monthlyData[month].count > 0) {
+                return (monthlyData[month].totalPrice / monthlyData[month].count);
+            }
+            return null;
+        });
+        
+        const hasChartData = chartData.some(val => val !== null);
+        if (!hasChartData) return;
+        
+        const chartId = `purchase-price-chart-${item.product.replace(/\s+/g, '-')}`;
+        const canvas = document.getElementById(chartId);
+        if (!canvas) return;
+        
+        const ctx = canvas.getContext('2d');
+        new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: months.map(m => m.substring(0, 3)),
+                datasets: [{
+                    label: 'Цена (тыс. ₽/т)',
+                    data: chartData,
+                    borderColor: '#10b981',
+                    backgroundColor: 'rgba(16, 185, 129, 0.1)',
+                    borderWidth: 2,
+                    tension: 0.4,
+                    fill: true,
+                    pointRadius: 4,
+                    pointHoverRadius: 6,
+                    pointBackgroundColor: '#10b981',
+                    spanGaps: true
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        display: false
+                    },
+                    tooltip: {
+                        backgroundColor: 'rgba(0, 0, 0, 0.8)',
+                        padding: 12,
+                        titleColor: '#fff',
+                        bodyColor: '#fff',
+                        callbacks: {
+                            label: function(context) {
+                                return context.parsed.y !== null ? context.parsed.y.toFixed(1) + ' тыс. ₽/т' : '';
+                            }
+                        }
+                    }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: false,
+                        ticks: {
+                            color: '#9ca3af',
+                            callback: function(value) {
+                                return value.toFixed(1);
+                            }
+                        },
+                        grid: {
+                            color: 'rgba(255, 255, 255, 0.05)'
+                        }
+                    },
+                    x: {
+                        ticks: {
+                            color: '#9ca3af'
+                        },
+                        grid: {
+                            color: 'rgba(255, 255, 255, 0.05)'
+                        }
+                    }
+                }
+            }
+        });
+    });
 }
 
 // Аналитика платежей покупателей

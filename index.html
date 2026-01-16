@@ -116,7 +116,12 @@
                 <span class="title-icon">📦</span>
                 Топ продукты
             </h2>
-            <div id="topProducts" class="top-list"></div>
+            <div class="chart-section-grid">
+                <div class="doughnut-wrapper">
+                    <canvas id="productsChart"></canvas>
+                </div>
+                <div id="productsLegend" class="doughnut-legend"></div>
+            </div>
         </div>
     </section>
 
@@ -131,6 +136,17 @@
         </div>
     </section>
 
+    <!-- Purchase Prices Section -->
+    <section id="purchase-prices-section" class="section">
+        <div class="container">
+            <h2 class="section-title">
+                <span class="title-icon">📊</span>
+                Средняя цена закупки
+            </h2>
+            <div id="purchasePrices"></div>
+        </div>
+    </section>
+
     <!-- Average Price Section -->
     <section id="price-section" class="section">
         <div class="container">
@@ -142,35 +158,14 @@
         </div>
     </section>
 
-    <!-- Basis Statistics Section with Doughnut Chart -->
-    <section id="basis-section" class="section">
+    <!-- Basis and Geography Section -->
+    <section id="basis-geography-section" class="section">
         <div class="container">
             <h2 class="section-title">
-                <span class="title-icon">🚢</span>
-                Статистика по базисам
+                <span class="title-icon">📊</span>
+                Статистика по базисам и географии
             </h2>
-            <div class="chart-section-grid">
-                <div class="doughnut-wrapper">
-                    <canvas id="basisChart"></canvas>
-                </div>
-                <div id="basisLegend" class="doughnut-legend"></div>
-            </div>
-        </div>
-    </section>
-
-    <!-- Geography Section with Doughnut Chart -->
-    <section id="geography-section" class="section">
-        <div class="container">
-            <h2 class="section-title">
-                <span class="title-icon">🌍</span>
-                География закупок
-            </h2>
-            <div class="chart-section-grid">
-                <div class="doughnut-wrapper">
-                    <canvas id="geographyChart"></canvas>
-                </div>
-                <div id="geographyLegend" class="doughnut-legend"></div>
-            </div>
+            <div id="basisGeographyContent"></div>
         </div>
     </section>
 
