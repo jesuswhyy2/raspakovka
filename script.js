@@ -549,9 +549,9 @@ function displayAvgPrices() {
 }
 
 // Пончиковая диаграмма - Базисы
-function displayBasisChart() {
+function displayBasisAndGeography() {
+    // Базисы
     const basisData = {};
-    
     dealsData.forEach(deal => {
         const basis = deal['Базис'] || 'Не указан';
         const volume = parseFloat(deal['Объем продажи']) || 0;
@@ -566,73 +566,8 @@ function displayBasisChart() {
     const sortedBasis = Object.entries(basisData)
         .sort((a, b) => b[1].volume - a[1].volume);
     
-    const totalVolume = sortedBasis.reduce((sum, [, data]) => sum + data.volume, 0);
-    
-    const labels = sortedBasis.map(([name]) => name);
-    const values = sortedBasis.map(([, data]) => Math.round(data.volume));
-    const colors = chartColors.mixed.slice(0, sortedBasis.length);
-    
-    const ctx = document.getElementById('basisChart').getContext('2d');
-    
-    if (basisChart) basisChart.destroy();
-    
-    basisChart = new Chart(ctx, {
-        type: 'doughnut',
-        data: {
-            labels: labels,
-            datasets: [{
-                data: values,
-                backgroundColor: colors,
-                borderColor: '#111827',
-                borderWidth: 4,
-                hoverOffset: 20
-            }]
-        },
-        options: {
-            responsive: true,
-            maintainAspectRatio: true,
-            cutout: '65%',
-            plugins: {
-                legend: { display: false },
-                tooltip: {
-                    backgroundColor: 'rgba(17, 24, 39, 0.95)',
-                    titleColor: '#fff',
-                    bodyColor: '#fff',
-                    padding: 16,
-                    borderColor: '#6366f1',
-                    borderWidth: 1,
-                    callbacks: {
-                        label: (context) => {
-                            const percent = ((context.parsed / totalVolume) * 100).toFixed(1);
-                            return `${context.parsed.toLocaleString('ru-RU')} т (${percent}%)`;
-                        }
-                    }
-                }
-            }
-        }
-    });
-    
-    // Легенда
-    const legendContainer = document.getElementById('basisLegend');
-    legendContainer.innerHTML = sortedBasis.map(([basis, data], i) => {
-        const percent = ((data.volume / totalVolume) * 100).toFixed(1);
-        return `
-            <div class="legend-row">
-                <div class="legend-dot" style="background: ${colors[i]}"></div>
-                <div class="legend-info">
-                    <div class="legend-name">${basis}</div>
-                    <div class="legend-stats">${data.deals} сделок • ${Math.round(data.volume).toLocaleString('ru-RU')} т</div>
-                </div>
-                <div class="legend-percent">${percent}%</div>
-            </div>
-        `;
-    }).join('');
-}
-
-// Пончиковая диаграмма - География
-function displayGeographyChart() {
+    // География
     const regionData = {};
-    
     dealsData.forEach(deal => {
         const region = deal['Регион закупки'] || 'Не указан';
         const volume = parseFloat(deal['Объем продажи']) || 0;
@@ -647,8 +582,6 @@ function displayGeographyChart() {
     const sortedRegions = Object.entries(regionData)
         .sort((a, b) => b[1].volume - a[1].volume);
     
-    const totalVolume = sortedRegions.reduce((sum, [, data]) => sum + data.volume, 0);
-    
     const regionIcons = {
         'ЮГ': '🌴',
         'ЦЕНТР': '🏛️',
@@ -656,66 +589,50 @@ function displayGeographyChart() {
         'default': '📍'
     };
     
-    const labels = sortedRegions.map(([name]) => name);
-    const values = sortedRegions.map(([, data]) => Math.round(data.volume));
-    const colors = ['#10b981', '#06b6d4', '#8b5cf6', '#f59e0b', '#ef4444'];
+    const container = document.getElementById('basisGeographyContent');
+    if (!container) return;
     
-    const ctx = document.getElementById('geographyChart').getContext('2d');
-    
-    if (geographyChart) geographyChart.destroy();
-    
-    geographyChart = new Chart(ctx, {
-        type: 'doughnut',
-        data: {
-            labels: labels,
-            datasets: [{
-                data: values,
-                backgroundColor: colors.slice(0, sortedRegions.length),
-                borderColor: '#111827',
-                borderWidth: 4,
-                hoverOffset: 20
-            }]
-        },
-        options: {
-            responsive: true,
-            maintainAspectRatio: true,
-            cutout: '65%',
-            plugins: {
-                legend: { display: false },
-                tooltip: {
-                    backgroundColor: 'rgba(17, 24, 39, 0.95)',
-                    titleColor: '#fff',
-                    bodyColor: '#fff',
-                    padding: 16,
-                    borderColor: '#10b981',
-                    borderWidth: 1,
-                    callbacks: {
-                        label: (context) => {
-                            const percent = ((context.parsed / totalVolume) * 100).toFixed(1);
-                            return `${context.parsed.toLocaleString('ru-RU')} т (${percent}%)`;
-                        }
-                    }
-                }
-            }
-        }
-    });
-    
-    // Легенда
-    const legendContainer = document.getElementById('geographyLegend');
-    legendContainer.innerHTML = sortedRegions.map(([region, data], i) => {
-        const percent = ((data.volume / totalVolume) * 100).toFixed(1);
-        const icon = regionIcons[region.toUpperCase()] || regionIcons['default'];
-        return `
-            <div class="legend-row">
-                <div class="legend-dot" style="background: ${colors[i]}"></div>
-                <div class="legend-info">
-                    <div class="legend-name">${icon} ${region}</div>
-                    <div class="legend-stats">${data.deals} сделок • ${Math.round(data.volume).toLocaleString('ru-RU')} т</div>
+    container.innerHTML = `
+        <div class="basis-geography-grid">
+            <div class="basis-geography-section">
+                <h3 class="basis-geography-subtitle">🚢 Статистика по базисам</h3>
+                <div class="basis-geography-list">
+                    ${sortedBasis.map(([basis, data]) => `
+                        <div class="basis-geography-item">
+                            <div class="basis-geography-name">${basis}</div>
+                            <div class="basis-geography-stats">
+                                <span class="stat-badge">📦 ${Math.round(data.volume).toLocaleString('ru-RU')} т</span>
+                                <span class="stat-badge">📝 ${data.deals} сделок</span>
+                            </div>
+                        </div>
+                    `).join('')}
                 </div>
-                <div class="legend-percent">${percent}%</div>
             </div>
-        `;
-    }).join('');
+            
+            <div class="basis-geography-section">
+                <h3 class="basis-geography-subtitle">🌍 География закупок</h3>
+                <div class="basis-geography-list">
+                    ${sortedRegions.map(([region, data]) => {
+                        const icon = regionIcons[region.toUpperCase()] || regionIcons['default'];
+                        return `
+                            <div class="basis-geography-item">
+                                <div class="basis-geography-name">${icon} ${region}</div>
+                                <div class="basis-geography-stats">
+                                    <span class="stat-badge">📦 ${Math.round(data.volume).toLocaleString('ru-RU')} т</span>
+                                    <span class="stat-badge">📝 ${data.deals} сделок</span>
+                                </div>
+                            </div>
+                        `;
+                    }).join('')}
+                </div>
+            </div>
+        </div>
+    `;
+}
+
+// Пончиковая диаграмма - География
+function displayGeographyChart() {
+    // Пустая функция для совместимости
 }
 
 // Рекордная сделка
