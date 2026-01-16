@@ -534,6 +534,32 @@ body {
     color: var(--text-muted);
 }
 
+/* ===== AVERAGE PRICES WITH CHARTS ===== */
+.avg-prices-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+    gap: 24px;
+}
+
+.stat-card-with-chart {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+.price-chart-wrapper {
+    height: 200px;
+    padding: 16px;
+    background: rgba(255, 255, 255, 0.02);
+    border-radius: 16px;
+    border: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.price-chart-wrapper canvas {
+    width: 100% !important;
+    height: 100% !important;
+}
+
 /* ===== DOUGHNUT CHARTS ===== */
 #basis-section {
     background: var(--bg-card);
