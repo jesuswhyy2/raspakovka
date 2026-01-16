@@ -327,7 +327,9 @@ function displayTopProducts() {
     const ctx = document.getElementById('productsChart')?.getContext('2d');
     if (!ctx) return;
     
-    if (window.productsChart) window.productsChart.destroy();
+    if (window.productsChart && typeof window.productsChart.destroy === 'function') {
+        window.productsChart.destroy();
+    }
     
     window.productsChart = new Chart(ctx, {
         type: 'doughnut',
